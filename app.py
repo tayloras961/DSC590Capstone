@@ -216,8 +216,7 @@ def render_dashboard(clean_df: pd.DataFrame, scored_df: pd.DataFrame, profile: d
 
 def render_reports(scored_df: pd.DataFrame, clean_df: pd.DataFrame, profile: dict) -> None:
     st.subheader("Weekly Summary Report")
-    st.info("Profile-based inputs are used only to personalize the report and suggestions. The anomaly model uses uploaded health data only.")
-
+    
     report_lines = build_weekly_report(scored_df, profile)
     for line in report_lines:
         st.write(f"- {line}")
