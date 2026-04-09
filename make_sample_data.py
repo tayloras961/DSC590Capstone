@@ -10,41 +10,41 @@ dates = pd.date_range("2026-01-01", periods=n_days, freq="D")
 df = pd.DataFrame({"timestamp": dates})
 df["dayofweek"] = df["timestamp"].dt.dayofweek
 
-# ---- Heart rate  ----
+# Heart rate
 df["heart_rate"] = np.random.normal(72, 5, n_days)
 
 weekend = df["dayofweek"].isin([5, 6])
 df.loc[weekend, "heart_rate"] -= np.random.normal(2, 1, weekend.sum())
 
-# ---- Steps (daily total) ----
+# Steps 
 df["steps"] = np.random.normal(7500, 2000, n_days).clip(2000, 15000)
 df.loc[weekend, "steps"] *= np.random.normal(0.9, 0.1, weekend.sum())
 
-# ---- Sleep (total per day) ----
+# Sleep
 df["sleep_hours"] = np.random.normal(7, 1, n_days).clip(4.5, 9)
 
-# ---- Glucose (daily average) ----
+# Glucose
 df["glucose"] = np.random.normal(100, 10, n_days)
 
-# ---- Calories (daily burn estimate) ----
+# Calories
 df["calories"] = (
     (df["steps"] * 0.04) +
     (df["heart_rate"] * 8) +
     np.random.normal(0, 50, n_days)
 )
 
-# ---- Inject realistic anomalies ----
+# Inject realistic anomalies
 # Elevated glucose
 df.loc[10:12, "glucose"] += 30
 
-# Poor sleep + high HR
+# Poor sleep + high heart rate
 df.loc[25:27, "sleep_hours"] -= 2
 df.loc[25:27, "heart_rate"] += 10
 
-# Low activity period
+# Low activity
 df.loc[40:42, "steps"] -= 4000
 
-# High activity spike
+# High activity 
 df.loc[50:51, "steps"] += 5000
 df.loc[50:51, "calories"] += 300
 
