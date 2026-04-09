@@ -1,6 +1,6 @@
-# Health Monitoring Streamlit App
+# AI-Powered Proactive Health Monitoring System
 
-This capstone prototype demonstrates:
+This capstone project demonstrates:
 - sign-in with hashed demo credentials
 - CSV ingestion and upload workflow
 - preprocessing and cleaning
