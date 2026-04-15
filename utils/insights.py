@@ -105,3 +105,29 @@ def build_personalized_recommendations(scored_df: pd.DataFrame, profile: dict) -
         )
 
     return recommendations
+
+def generate_ai_summary(scored_df: pd.DataFrame, profile: dict) -> str:
+    latest = scored_df.iloc[-1]
+
+    risk = latest.get("risk_level", "Unknown")
+    risk_score = latest.get("risk_score", 0)
+
+    # Trend (based on last 3 points)
+    recent = scored_df.tail(3)
+    trend = "stable"
+    if len(recent) >= 2:
+        if recent["risk_score"].iloc[-1] > recent["risk_score"].iloc[0]:
+            trend = "increasing"
+        elif recent["risk_score"].iloc[-1] < recent["risk_score"].iloc[0]:
+            trend = "decreasing"
+
+    # Key drivers (reuse if exists)
+    drivers = latest.get("risk_drivers", "")
+    driver_text = f" Key contributing factors include {drivers}." if drivers else ""
+
+    # Summary
+    return (
+        f"Recent data indicates a {risk.lower()} level of risk with a {trend} trend over time. "
+        f"The current risk score is {round(risk_score, 2)}.{driver_text} "
+        f"This suggests a change from the user's recent baseline that may require continued monitoring."
+    )

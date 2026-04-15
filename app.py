@@ -6,7 +6,7 @@ from werkzeug.security import check_password_hash
 from utils.auth import DEFAULT_USERS
 from utils.data import load_csv_bytes, prepare_health_data, summarize_daily
 from utils.model import build_model, score_anomalies, compare_contamination_settings
-from utils.insights import build_profile, build_personalized_recommendations, build_health_snapshot
+from utils.insights import build_profile, build_personalized_recommendations, build_health_snapshot, generate_ai_summary
 from utils.reporting import (
     build_anomaly_summary,
     build_metric_chart,
@@ -165,53 +165,52 @@ def render_top_cards(scored_df: pd.DataFrame, profile: dict) -> None:
         st.write(f"- Progress toward step goal: **{snapshot['step_goal_progress']:.0f}%**")
 
 
-def render_dashboard(clean_df: pd.DataFrame, scored_df: pd.DataFrame, profile: dict, source_name: str | None) -> None:
-    st.markdown('<div class="hero-card">', unsafe_allow_html=True)
-    st.subheader("Monitoring Dashboard")
-    if source_name:
-        st.caption(f"Current dataset: {source_name}")
-    st.markdown("</div>", unsafe_allow_html=True)
+def render_top_cards(scored_df: pd.DataFrame, profile: dict) -> None:
+    summary = build_anomaly_summary(scored_df)
+    latest = scored_df.iloc[-1]
 
-    render_top_cards(scored_df, profile)
+    status_class = (
+        "status-good" if latest["risk_level"] == "Low"
+        else "status-watch" if latest["risk_level"] == "Moderate"
+        else "status-high"
+    )
 
-    st.markdown("### Data Preview")
-    st.dataframe(clean_df.head(20), use_container_width=True)
+    # Metrics
+    st.markdown('<div class="section-label">Current Monitoring Snapshot</div>', unsafe_allow_html=True)
+    c1, c2, c3, c4, c5 = st.columns(5)
 
-    st.markdown("### Trend and Anomaly Views")
-    chart_cols = st.columns(2)
-    metrics = [
-        ("heart_rate", "Heart Rate"),
-        ("steps", "Steps"),
-        ("glucose", "Glucose"),
-        ("sleep_hours", "Sleep Hours"),
-        ("calories", "Calories"),
-    ]
+    c1.metric("Records", summary["records"])
+    c2.metric("Flagged anomalies", summary["anomalies"])
+    c3.metric("Anomaly rate", f"{summary['anomaly_rate']:.1f}%")
+    c4.metric("Current risk score", f"{latest['risk_score']:.1f}")
+    c5.metric("Forecast risk (24h)", f"{latest['forecast_risk_24h']:.1f}")
 
-    for idx, (metric, title) in enumerate(metrics):
-        if metric in scored_df.columns:
-            with chart_cols[idx % 2]:
-                st.plotly_chart(build_metric_chart(scored_df, metric, title), use_container_width=True)
+    st.markdown(
+        f"Current risk level: <span class='{status_class}'>{latest['risk_level']}</span> "
+        f"• Primary drivers: {latest['risk_drivers']}",
+        unsafe_allow_html=True,
+    )
 
-    st.plotly_chart(build_risk_chart(scored_df), use_container_width=True)
+    # AI Insight
+    st.markdown("### AI Insight Summary")
+    ai_summary = generate_ai_summary(scored_df, profile)
+    st.success(ai_summary)
 
-    st.markdown("### Flagged Records")
-    flagged = scored_df.loc[scored_df["anomaly_flag"] == 1].copy()
-    if flagged.empty:
-        st.success("No anomalies were flagged with the current settings.")
-    else:
-        keep_cols = [
-            c for c in [
-                "timestamp", "heart_rate", "steps", "calories", "sleep_hours",
-                "glucose", "anomaly_score", "risk_score", "risk_level", "risk_drivers"
-            ] if c in flagged.columns
-        ]
-        st.dataframe(flagged[keep_cols].sort_values("risk_score", ascending=False), use_container_width=True)
-        st.download_button(
-            "Download flagged anomalies CSV",
-            data=flagged.to_csv(index=False).encode("utf-8"),
-            file_name="flagged_anomalies.csv",
-            mime="text/csv"
-        )
+    # Personalized
+    snapshot = build_health_snapshot(scored_df, profile)
+
+    st.markdown("### Personalized Snapshot")
+    left, right = st.columns(2)
+
+    with left:
+        st.write(f"- BMI estimate: **{snapshot['bmi']:.1f}**")
+        st.write(f"- Average daily steps: **{snapshot['avg_daily_steps']:.0f}**")
+        st.write(f"- Average glucose: **{snapshot['avg_glucose']:.1f}**")
+
+    with right:
+        st.write(f"- Average daily sleep: **{snapshot['avg_daily_sleep']:.1f} hours**")
+        st.write(f"- Average resting-style heart rate: **{snapshot['avg_heart_rate']:.1f} bpm**")
+        st.write(f"- Progress toward step goal: **{snapshot['step_goal_progress']:.0f}%**")
 
 
 def render_reports(scored_df: pd.DataFrame, clean_df: pd.DataFrame, profile: dict) -> None:
