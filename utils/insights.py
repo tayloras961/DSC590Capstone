@@ -1,5 +1,5 @@
 import pandas as pd
-
+# user profile sidebar
 def build_profile(age: int, gender: str, height_in: int, weight_lb: int, baseline_steps_goal: int, wellness_focus: str) -> dict:
     height_m = height_in * 0.0254
     weight_kg = weight_lb * 0.453592
@@ -112,7 +112,7 @@ def generate_ai_summary(scored_df: pd.DataFrame, profile: dict) -> str:
     risk = latest.get("risk_level", "Unknown")
     risk_score = latest.get("risk_score", 0)
 
-    # Trend (based on last 3 points)
+    # Trend
     recent = scored_df.tail(3)
     trend = "stable"
     if len(recent) >= 2:
@@ -121,7 +121,7 @@ def generate_ai_summary(scored_df: pd.DataFrame, profile: dict) -> str:
         elif recent["risk_score"].iloc[-1] < recent["risk_score"].iloc[0]:
             trend = "decreasing"
 
-    # Key drivers (reuse if exists)
+    # Key drivers
     drivers = latest.get("risk_drivers", "")
     driver_text = f" Key contributing factors include {drivers}." if drivers else ""
 
