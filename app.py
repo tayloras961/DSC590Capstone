@@ -63,10 +63,7 @@ def show_login() -> None:
 
     st.markdown('<div class="hero-card">', unsafe_allow_html=True)
     st.title(APP_TITLE)
-    st.write(
-        "This prototype combines anomaly detection, lightweight predictive risk scoring, "
-        "and personalized health recommendations in a single interactive dashboard."
-    )
+   
     st.markdown("</div>", unsafe_allow_html=True)
 
     with st.form("login_form", clear_on_submit=False):
